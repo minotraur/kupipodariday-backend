@@ -6,6 +6,7 @@ import {
   Param,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -39,5 +40,11 @@ export class UsersController {
     }
     await this.usersService.updateOne(req.user.userId, updateData);
     return this.usersService.findOne({ where: { id: req.user.userId } });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  async findMany(@Query('query') query: string) {
+    return this.usersService.findMany(query);
   }
 }
