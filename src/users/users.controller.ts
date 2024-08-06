@@ -13,6 +13,7 @@ import {
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { HashService } from 'src/auth/hash.service';
+import { User } from './user.entity';
 
 @Controller('users')
 export class UsersController {
@@ -34,12 +35,15 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Put('me')
-  async updateProfile(@Request() req, @Body() updateData) {
+  async updateProfile(@Request() req, @Body() updateData: Partial<User>) {
+    await this.usersService.checkUniqueConstraints(req.user.userId, updateData);
+
     if (updateData.password) {
       updateData.password = await this.hashService.hashPassword(
         updateData.password,
       );
     }
+
     await this.usersService.updateOne(req.user.userId, updateData);
     return this.usersService.findOne({ where: { id: req.user.userId } });
   }
@@ -54,18 +58,21 @@ export class UsersController {
   @Put(':id')
   async updateUser(
     @Param('id') id: number,
-    @Body() updateData,
+    @Body() updateData: Partial<User>,
     @Request() req,
   ) {
     if (id !== req.user.userId) {
       throw new UnauthorizedException('You can only edit your own profile');
     }
-    // Check if password is being updated and hash it
+
+    await this.usersService.checkUniqueConstraints(id, updateData);
+
     if (updateData.password) {
       updateData.password = await this.hashService.hashPassword(
         updateData.password,
       );
     }
+
     await this.usersService.updateOne(id, updateData);
     return this.usersService.findOne({ where: { id } });
   }
