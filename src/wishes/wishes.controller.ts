@@ -67,4 +67,10 @@ export class WishesController {
   async findAllWishes() {
     return this.wishesService.findAll();
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/copy')
+  async copyWish(@Param('id') id: number, @Request() req) {
+    return this.wishesService.copyWish(id, req.user.userId);
+  }
 }
