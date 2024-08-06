@@ -6,6 +6,9 @@ import { WishesModule } from './wishes/wishes.module';
 import { WishlistsModule } from './wishlists/wishlists.module';
 import { OffersModule } from './offers/offers.module';
 import { AuthModule } from './auth/auth.module';
+import { MailerModule } from './mailer/mailer.module';
+import configuration from './config/configuration';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -19,11 +22,16 @@ import { AuthModule } from './auth/auth.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [configuration],
+    }),
     UsersModule,
     WishesModule,
     WishlistsModule,
     OffersModule,
     AuthModule,
+    MailerModule,
   ],
   controllers: [AppController],
   providers: [],
