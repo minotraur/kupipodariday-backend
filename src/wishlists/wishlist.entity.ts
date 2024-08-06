@@ -19,10 +19,10 @@ export class Wishlist {
   @Column({ length: 250 })
   name: string;
 
-  @Column({ length: 1500 })
+  @Column({ length: 1500, nullable: true })
   description: string;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 
   @ManyToMany(() => Wish)

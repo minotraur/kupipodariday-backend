@@ -8,10 +8,13 @@ import {
   Param,
   Request,
   UseGuards,
-  UnauthorizedException,
+  ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { WishlistsService } from './wishlists.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateWishlistDto } from './dto/create-wishlist.dto';
+import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 
 @Controller('wishlists')
 export class WishlistsController {
@@ -19,43 +22,55 @@ export class WishlistsController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async createWishlist(@Body() wishlistData, @Request() req) {
-    wishlistData.owner = req.user.userId;
-    return this.wishlistsService.create(wishlistData);
+  async create(@Body() createWishlistDto: CreateWishlistDto, @Request() req) {
+    return this.wishlistsService.create({
+      ...createWishlistDto,
+      owner: req.user.userId,
+    });
+  }
+
+  @Get()
+  async findAll() {
+    return this.wishlistsService.findAll();
   }
 
   @Get(':id')
-  async getWishlist(@Param('id') id: number) {
-    return this.wishlistsService.findOne({ where: { id } });
+  async findOne(@Param('id') id: string) {
+    const wishlist = await this.wishlistsService.findOne(Number(id));
+    if (!wishlist) {
+      throw new NotFoundException('Wishlist not found');
+    }
+    return wishlist;
   }
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async updateWishlist(
-    @Param('id') id: number,
-    @Body() updateData,
+  async update(
+    @Param('id') id: string,
+    @Body() updateWishlistDto: UpdateWishlistDto,
     @Request() req,
   ) {
-    const wishlist = await this.wishlistsService.findOne({ where: { id } });
-    if (wishlist.owner.id !== req.user.userId) {
-      throw new UnauthorizedException('You can only edit your own wishlists');
+    const wishlist = await this.wishlistsService.findOne(Number(id));
+    if (!wishlist) {
+      throw new NotFoundException('Wishlist not found');
     }
-    await this.wishlistsService.updateOne(id, updateData);
-    return this.wishlistsService.findOne({ where: { id } });
+    if (wishlist.owner.id !== req.user.userId) {
+      throw new ForbiddenException('You can only update your own wishlists');
+    }
+    return this.wishlistsService.updateOne(Number(id), updateWishlistDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async deleteWishlist(@Param('id') id: number, @Request() req) {
-    const wishlist = await this.wishlistsService.findOne({ where: { id } });
-    if (wishlist.owner.id !== req.user.userId) {
-      throw new UnauthorizedException('You can only delete your own wishlists');
+  async remove(@Param('id') id: string, @Request() req) {
+    const wishlist = await this.wishlistsService.findOne(Number(id));
+    if (!wishlist) {
+      throw new NotFoundException('Wishlist not found');
     }
-    await this.wishlistsService.removeOne(id);
-  }
-
-  @Get()
-  async findAllWishlists() {
-    return this.wishlistsService.findAll();
+    if (wishlist.owner.id !== req.user.userId) {
+      throw new ForbiddenException('You can only delete your own wishlists');
+    }
+    await this.wishlistsService.removeOne(Number(id));
+    return { message: 'Wishlist deleted successfully' };
   }
 }

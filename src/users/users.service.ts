@@ -25,10 +25,7 @@ export class UsersService {
 
   async findMany(query: string): Promise<User[]> {
     return this.usersRepository.find({
-      where: [
-        { username: Like(`%${query}%`) },
-        { email: Like(`%${query}%`) },
-      ],
+      where: [{ username: Like(`%${query}%`) }, { email: Like(`%${query}%`) }],
     });
   }
 
